@@ -381,22 +381,8 @@ unittest
  * Bugs:
  *      Results are undefined if |x| >= $(POWER 2,64).
  */
-
-version(LDC)
-{
-
-@safe pure nothrow real cos(real x)
-{
-    return llvm_cos(x);
-}
-
-}
-else
-{
-
+version(LDC) { alias cos = llvm_cos!real; } else
 real cos(real x) @safe pure nothrow;       /* intrinsic */
-
-}
 
 /***********************************
  * Returns sine of x. x is in radians.
@@ -410,21 +396,8 @@ real cos(real x) @safe pure nothrow;       /* intrinsic */
  * Bugs:
  *      Results are undefined if |x| >= $(POWER 2,64).
  */
-version(LDC)
-{
-
-@safe pure nothrow real sin(real x)
-{
-    return llvm_sin(x);
-}
-
-}
-else
-{
-
+version(LDC) { alias sin = llvm_sin!real; } else
 real sin(real x) @safe pure nothrow;       /* intrinsic */
-
-}
 
 
 /***********************************
@@ -1329,6 +1302,7 @@ creal sqrt(creal z) @safe pure nothrow
  *    $(TR $(TD $(NAN))        $(TD $(NAN))    )
  *  )
  */
+version(LDC) { alias exp = llvm_exp!real; } else
 real exp(real x) @trusted pure nothrow
 {
     version(D_InlineAsm_X86)
@@ -2373,7 +2347,7 @@ unittest
  *    $(TR $(TD +$(INFIN))    $(TD +$(INFIN)) $(TD no)           $(TD no))
  *    )
  */
-
+version(LDC) { alias log = llvm_log!real; } else
 real log(real x) @safe pure nothrow
 {
     version (INLINE_YL2X)
@@ -2940,30 +2914,8 @@ real cbrt(real x) @trusted nothrow
  *      $(TR $(TD $(PLUSMN)$(INFIN)) $(TD +$(INFIN)) )
  *      )
  */
-
-version(LDC)
-{
-    @trusted pure nothrow real fabs(real x)
-    {
-        version(D_InlineAsm_X86)
-        {
-            asm {
-                fld x;
-                fabs;
-            }
-        }
-        else
-        {
-            return fabsl(x);
-        }
-    }
-}
-else
-{
-
-real fabs(real x) @safe pure nothrow;      /* intrinsic */
-
-}
+version(LDC) { alias fabs = llvm_fabs!real; } else
+real fabs(real x) @safe pure nothrow;       /* intrinsic */
 
 
 /***********************************************************************
@@ -3128,6 +3080,7 @@ unittest
  * Returns the value of x rounded downward to the next integer
  * (toward negative infinity).
  */
+version (LDC) { alias floor = llvm_floor!real; } else
 real floor(real x) @trusted pure nothrow
 {
     version (Win64)
@@ -4864,6 +4817,7 @@ real fmin(real x, real y) @safe pure nothrow { return x < y ? x : y; }
  *
  * BUGS: Not currently implemented - rounds twice.
  */
+version(LDC) { alias fma = llvm_fma!real; } else
 real fma(real x, real y, real z) @safe pure nothrow { return (x * y) + z; }
 
 /*******************************************************************
@@ -4871,6 +4825,12 @@ real fma(real x, real y, real z) @safe pure nothrow { return (x * y) + z; }
  */
 Unqual!F pow(F, G)(F x, G n) @trusted pure nothrow
     if (isFloatingPoint!(F) && isIntegral!(G))
+{
+version(LDC)
+{
+    return llvm_powi(x, y);
+}
+else
 {
     real p = 1.0, v = void;
     Unsigned!(Unqual!G) m = n;
@@ -4914,6 +4874,7 @@ Unqual!F pow(F, G)(F x, G n) @trusted pure nothrow
         v *= v;
     }
     return p;
+}
 }
 
 unittest
@@ -5081,6 +5042,7 @@ Unqual!(Largest!(F, G)) pow(F, G)(F x, G y) @trusted pure nothrow
 {
     alias typeof(return) Float;
 
+    version (LDC) { alias impl = llvm_pow!real; } else
     static real impl(real x, real y) pure nothrow
     {
         // Special cases.
